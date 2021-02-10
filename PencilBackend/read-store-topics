@@ -1,0 +1,65 @@
+const xlsxFile = require('read-excel-file/node');
+var MongoClient = require('mongodb').MongoClient;
+//var url = "mongodb://localhost:27017/";
+var url = "mongodb+srv://dbUser:dbUser@cluster0.7zkhe.mongodb.net/mydb?retryWrites=true&w=majority";
+var numberOfRows = 0;
+var async = require("async");
+
+MongoClient.connect(url, async  function(err, db) {
+  if (err) throw err;
+  var dbo = db.db("mydb");
+  await insertData(dbo);
+  //db.close();
+  
+})
+
+async function insertData(dbo) {
+  xlsxFile('./Topics.xlsx').then((rows) => {
+      rows.forEach((col)=>{
+        //numberOfRows = numberOfRows + 1;
+        var QuestionNumber = 0;
+        var Topics = new Array(3);
+        var index = 0;
+        col.forEach((data)=>{
+           if (data != 'Topic Level 1' && data != 'Topic Level 2' && data != 'Topic Level 3') {
+              Topics[index] = data;
+              index = index + 1;
+          }
+        })
+
+        if (Topics[0] != null) {
+          dbo.collection("Topics").insertOne({_id: Topics[0], childs: []}, function(err, result) {
+            //if (err) throw err;
+             console.log("Topic Level 1 inserted");
+          });
+        }
+
+        if (Topics[1] != null) {
+          dbo.collection("Topics").insertOne({_id: Topics[1], childs: []}, function(err, result) {
+             //if (err) throw err;
+             console.log("Topic Level 2 inserted");
+          });
+        }
+        
+        if (Topics[2] != null) {
+          dbo.collection("Topics").insertOne({_id: Topics[2], childs: []}, function(err, result) {
+             //if (err) throw err;
+             console.log("Topic Level 3 inserted");
+          });
+        }
+        if (Topics[1] != null) {
+          dbo.collection("Topics").updateOne( { _id : Topics[0] } , {  $addToSet : { childs : Topics[1]  } }, function(err, result) {
+           // console.log(result);
+          });
+          //db.categoriedPCO.update({_id:'LG'},{  $addToSet:{childs:'LGI'}});
+        }
+        if (Topics[2] != null) {
+          dbo.collection("Topics").updateOne( { _id : Topics[1] } , {  $addToSet : { childs : Topics[2]  } }, function(err, result) {
+            //console.log(result);
+          });
+          //db.categoriedPCO.update({_id:'LG'},{  $addToSet:{childs:'LGI'}});
+        }
+     })
+
+   })
+}

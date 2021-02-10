@@ -1,0 +1,40 @@
+const xlsxFile = require('read-excel-file/node');
+var MongoClient = require('mongodb').MongoClient;
+//var url = "mongodb://localhost:27017/";
+var url = "mongodb+srv://dbUser:dbUser@cluster0.7zkhe.mongodb.net/mydb?retryWrites=true&w=majority";
+
+MongoClient.connect(url, function(err, db) {
+  if (err) throw err;
+  var dbo = db.db("mydb");
+  xlsxFile('./Questions.xlsx').then((rows) => {
+      rows.forEach((col)=>{
+        var QuestionNumber = 0;
+        var Annotations = new Array(5);
+        var isQuestion = -1; 
+	var index = 0;
+	col.forEach((data)=>{
+          if (data != null && data != 'Question number' && data != 'Annotation 1' && data != 'Annotation 2' && data != 'Annotation 3' && data != 'Annotation 4' && data != 'Annotation 5') {
+             if (isQuestion == -1) {
+                QuestionNumber = data;
+		isQuestion = 1;
+             } else {
+	        Annotations[index] = data;
+		//console.log(Annotations[index] === undefined ? null : Annotations[index]);
+                index = index + 1;
+	     }
+          }
+        }) 
+        var myobj = { _id: QuestionNumber,
+                         Annotation1 : (Annotations[0] === undefined ? null : Annotations[0]),
+                         Annotation2 : (Annotations[1] === undefined ? null : Annotations[1]), 
+                         Annotation3 : (Annotations[2] === undefined ? null : Annotations[2]), 
+                         Annotation4 : (Annotations[3] === undefined ? null : Annotations[3]),
+                         Annotation5 : (Annotations[4] === undefined ? null : Annotations[4])};
+        dbo.collection("questions").insertOne(myobj, function(err, result) {
+          if (err) throw err;
+            console.log("1 document inserted");
+        });
+    })
+   db.close();
+  })
+})
